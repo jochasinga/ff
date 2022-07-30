@@ -35,6 +35,20 @@ impl ops::Add for FieldElement {
     }
 }
 
+impl ops::Sub for FieldElement {
+    type Output = Self;
+
+    fn sub(self, other: Self) -> Self {
+        if self.prime != other.prime {
+            panic!("Cannot subtract two elements of different fields");
+        }
+        Self {
+            num: (self.num - other.num).rem_euclid(self.prime),
+            prime: self.prime,
+        }
+    }
+}
+
 impl FieldElement {
     pub fn new(num: u32, prime: u32) -> Result<Self, impl error::Error> {
         if num >= prime {
@@ -86,4 +100,26 @@ mod tests {
         let e2 = FieldElement::new(5, 27).unwrap();
         let _ = e1 + e2;
     }
+
+
+    #[test]
+    fn field_element_subtraction() {
+        let p = 13;
+        let e1 = FieldElement::new(5, p).unwrap();
+        let e2 = FieldElement::new(3, p).unwrap();
+        let expect = FieldElement::new((5-3 as u32).rem_euclid(p), p).unwrap();
+        assert_eq!(e1 - e2, expect);
+    }
+
+    #[test]
+    #[should_panic]
+    fn field_element_subtraction_of_different_order() {
+        let e1 = FieldElement::new(5, 13).unwrap();
+        let e2 = FieldElement::new(3, 27).unwrap();
+        let _ = e1 + e2;
+    }
+
+
+
+
 }
