@@ -1,6 +1,7 @@
 use thiserror::Error;
 use std::error;
 use std::fmt;
+use std::ops;
 
 #[derive(Error, Debug)]
 pub enum FiniteFieldError {
@@ -17,6 +18,20 @@ pub struct FieldElement {
 impl fmt::Display for FieldElement {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "FieldElement_{}({})", self.num, self.prime)
+    }
+}
+
+impl ops::Add for FieldElement {
+    type Output = Self;
+
+    fn add(self, other: Self) -> Self {
+        if self.prime != other.prime {
+            panic!("Cannot add two elements of different fields");
+        }
+        Self {
+            num: (self.num + other.num).rem_euclid(self.prime),
+            prime: self.prime,
+        }
     }
 }
 
@@ -53,5 +68,22 @@ mod tests {
         assert!(e1 == e2);
         let e3 = FieldElement::new(1, 27).unwrap();
         assert!(e3 != e2);
+    }
+
+    #[test]
+    fn field_element_addition() {
+        let p = 13;
+        let e1 = FieldElement::new(1, p).unwrap();
+        let e2 = FieldElement::new(5, p).unwrap();
+        let expect = FieldElement::new((1+5 as u32).rem_euclid(p), p).unwrap();
+        assert_eq!(e1 + e2, expect);
+    }
+
+    #[test]
+    #[should_panic]
+    fn field_element_addition_of_different_order() {
+        let e1 = FieldElement::new(1, 13).unwrap();
+        let e2 = FieldElement::new(5, 27).unwrap();
+        let _ = e1 + e2;
     }
 }
